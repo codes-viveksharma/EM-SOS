@@ -760,7 +760,7 @@
     const GEOCODING_API_KEY = "AIzaSyBdbODDYbwpfoZZbMmHCYUNBdv-I7UoHkU";
 
     // ------------------------------ GLOBAL STATE --------------------------------
-    let currentLocation = { lat: 28.6139, lng: 77.2090 };
+    let currentLocation = null;
     let locationReady = false;
     let isSOSActive = false;
     let holdInterval = null;
@@ -812,7 +812,8 @@
     async function getLiveLocation() {
       return new Promise((resolve) => {
         if (!navigator.geolocation) {
-          resolve(currentLocation);
+          locTextSpan.innerText = "Geolocation not supported by browser.";
+          resolve(null);
           return;
         }
 
@@ -829,8 +830,8 @@
             async (err) => {
               console.warn("Location error:", err);
               if (!locationReady) {
-                // Silently fallback so user isn't annoyed by toasts on refresh
-                resolve(currentLocation);
+                locTextSpan.innerText = "Location Unknown - GPS Denied or Off";
+                resolve(null);
               }
             },
             { enableHighAccuracy: true, maximumAge: 0, timeout: 10000 }
@@ -858,6 +859,7 @@
     }
 
     function getLocationLink() {
+      if (!currentLocation) return "Location Unavailable";
       return `https://www.google.com/maps?q=${currentLocation.lat},${currentLocation.lng}`;
     }
 
@@ -866,7 +868,7 @@
       const existing = document.querySelector('.sos-message-panel');
       if (existing) existing.remove();
       const link = getLocationLink();
-      const latLng = `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}`;
+      const latLng = currentLocation ? `${currentLocation.lat.toFixed(5)}, ${currentLocation.lng.toFixed(5)}` : "Unknown";
       const panel = document.createElement('div');
       panel.className = 'sos-message-panel';
       panel.innerHTML = `
@@ -874,7 +876,7 @@
       <div class="msg-text">
         <strong>Emergency alert sent!</strong><br>
         Location: ${latLng}<br>
-        <a href="${link}" target="_blank">Open in Maps →</a>
+        ${currentLocation ? `<a href="${link}" target="_blank">Open in Maps →</a>` : '<i>Enable GPS for map link</i>'}
       </div>
       <i class="fas fa-times close-msg"></i>
     `;
